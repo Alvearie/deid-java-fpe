@@ -9,12 +9,18 @@ package com.privacylogistics;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and limitations under the License.
+ * 
+ * ------------------------------------------------------------------------
+ * Modified by IBM Corp. 2021 - Jarrett Anderson
+ * 
+ * - removed org.apache.logging.log4j logger and logging statements
+ * ------------------------------------------------------------------------
  */
 
 import javax.crypto.*;
@@ -23,9 +29,6 @@ import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class FF3Cipher {
     /**
@@ -127,10 +130,8 @@ public class FF3Cipher {
         // Split the message
         String A = plaintext.substring(0,u);
         String B = plaintext.substring(u);
-        logger.info("r {} A {} B {}", this.radix, A, B);
 
         // Split the tweak
-        logger.info("tweak: {}", byteArrayToHexString(this.tweakBytes));
         byte[] Tl = Arrays.copyOf(this.tweakBytes, HALF_TWEAK_LEN);
         byte[] Tr = Arrays.copyOfRange(this.tweakBytes, HALF_TWEAK_LEN, TWEAK_LEN);
 
@@ -142,8 +143,6 @@ public class FF3Cipher {
 
         BigInteger modU = BigInteger.valueOf(this.radix).pow(u);
         BigInteger modV = BigInteger.valueOf(this.radix).pow(v);
-        logger.info("u {} v {} modU: {} modV: {}", u, v, modU, modV);
-        logger.info("tL: {} tR: {}", byteArrayToHexString(Tl), byteArrayToHexString(Tr));
 
         for (byte i = 0; i < NUM_ROUNDS; ++ i) {
             int m;
@@ -166,7 +165,6 @@ public class FF3Cipher {
             // Calculate S by operating on P in place
             byte[] S = this.aesCipher.doFinal(P);
             reverseBytes(S);
-            logger.info("\tS: {}", byteArrayToHexString(S));
 
             BigInteger y = new BigInteger(byteArrayToHexString(S), 16);
 
@@ -185,8 +183,6 @@ public class FF3Cipher {
                 c = c.mod(modV);
             }
 
-            logger.info("\tm: {} A: {} c: {} y: {}", m, A, c, y);
-
             // Convert c to sting using radix and length m
             String C = c.toString(this.radix);
             C = reverseString(C);
@@ -195,7 +191,6 @@ public class FF3Cipher {
             // Final steps
             A = B;
             B = C;
-            logger.info("A: {} B: {}", A, B);
         }
         return A+B;
     }
@@ -237,7 +232,6 @@ public class FF3Cipher {
         String B = ciphertext.substring(u);
 
         // Split the tweak
-        logger.info("tweak: {}", byteArrayToHexString(this.tweakBytes));
         byte[] Tl = Arrays.copyOf(this.tweakBytes, HALF_TWEAK_LEN);
         byte[] Tr = Arrays.copyOfRange(this.tweakBytes, HALF_TWEAK_LEN, TWEAK_LEN);
 
@@ -249,8 +243,6 @@ public class FF3Cipher {
 
         BigInteger modU = BigInteger.valueOf(this.radix).pow(u);
         BigInteger modV = BigInteger.valueOf(this.radix).pow(v);
-        logger.info("modU: {} modV: {}", modU, modV);
-        logger.info("tL: {} tR: {}", byteArrayToHexString(Tl), byteArrayToHexString(Tr));
 
         for (byte i = (byte) (NUM_ROUNDS-1); i >= 0; --i) {
             int m;
@@ -273,7 +265,6 @@ public class FF3Cipher {
             // Calculate S by operating on P in place
             byte[] S = this.aesCipher.doFinal(P);
             reverseBytes(S);
-            logger.info("\tS: {}", byteArrayToHexString(S));
 
             BigInteger y = new BigInteger(byteArrayToHexString(S), 16);
 
@@ -292,8 +283,6 @@ public class FF3Cipher {
                 c = c.mod(modV);
             }
 
-            logger.info("\tm: {} B: {} c: {} y: {}", m, B, c, y);
-
             // Convert c to sting using radix and length m
             String C = c.toString(this.radix);
             C = reverseString(C);
@@ -302,7 +291,6 @@ public class FF3Cipher {
             // Final steps
             B = A;
             A = C;
-            logger.info("A: {} B: {}", A, B);
         }
         return A+B;
     }
@@ -326,7 +314,6 @@ public class FF3Cipher {
         byte[] bBytes = new BigInteger(B, radix).toByteArray();
 
         System.arraycopy(bBytes,0,P,(BLOCK_SIZE-bBytes.length),bBytes.length);
-        logger.info("round: {} W: {} P: {}", i, byteArrayToHexString(W), byteArrayToIntString(P));
         return P;
     }
 
@@ -387,7 +374,6 @@ public class FF3Cipher {
     public static int TWEAK_LEN =    8;       // TODO: change to 7 bytes when 56-bit test vectors for FF3-1 become available
     public static int HALF_TWEAK_LEN = TWEAK_LEN/2;
     public static int MAX_RADIX =    36;      // Java BigInteger supports radix 2..36
-    public static Logger logger = LogManager.getLogger(FF3Cipher.class.getName());
 
     private final int radix;
     private byte[] tweakBytes;
